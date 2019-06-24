@@ -14,7 +14,7 @@ module.exports = {
     var config  = require(support.resolveSupportPath('config', 'config.js'));
 
     config.sqlite.storage = support.resolveSupportPath('tmp', 'test.sqlite');
-    config = support.Sequelize.Utils._.extend(
+    config = _.extend(
       config,
       config[dialect],
       mixin || {},
@@ -30,14 +30,8 @@ module.exports = {
 
   clearDirectory: function () {
     return through.obj(function (file, encoding, callback) {
-      exec('rm -rf ./*', { cwd: file.path }, function (err) {
-        if (err) {
-          callback(err, file);
-        } else {
-          exec('rm -f ./.sequelizerc', { cwd: file.path }, function (err) {
-            callback(err, file);
-          });
-        }
+      exec('rm -rf ./* && rm -f ./.sequelizerc', { cwd: file.path }, function (err) {
+        callback(err, file);
       });
     });
   },
@@ -80,7 +74,7 @@ module.exports = {
             expect(err.code).to.equal(1);
             callback(null, result);
           } catch (e) {
-            callback(e, result);
+            callback(new Error('Expected cli to exit with a non-zero code'), null);
           }
         } else {
           err = options.pipeStderr ? null : err;
@@ -188,6 +182,14 @@ module.exports = {
       });
   },
 
+  readSchemas: function (sequelize, callback) {
+    return sequelize
+      .showAllSchemas()
+      .then(function (schemas) {
+        return callback(schemas.sort());
+      });
+  },
+
   countTable: function (sequelize, table, callback) {
     var QueryGenerator =  sequelize.getQueryInterface().QueryGenerator;
 
@@ -196,6 +198,13 @@ module.exports = {
       .then(function (result) {
         return callback((result.length === 2) ? result[0] : result );
       });
+  },
+  execQuery: function(sequelize, sql, options) {
+    if (sequelize.query.length === 2) {
+      return sequelize.query(sql, options);
+    } else {
+      return sequelize.query(sql, null, options);
+    }
   }
 };
 

@@ -1,14 +1,13 @@
-  'use strict';
+const expect  = require('expect.js');
+const Support = require(__dirname + '/../../support');
+const helpers = require(__dirname + '/../../support/helpers');
+const gulp    = require('gulp');
+const fs      = require('fs');
 
-var expect  = require('expect.js');
-var Support = require(__dirname + '/../../support');
-var helpers = require(__dirname + '/../../support/helpers');
-var gulp    = require('gulp');
-
-([
+[
   'db:migrate:undo'
-]).forEach(function (flag) {
-  var prepare = function (callback, _flag) {
+].forEach(flag => {
+  const prepare = function (callback, _flag) {
     _flag = _flag || flag;
 
     gulp
@@ -21,12 +20,12 @@ var gulp    = require('gulp');
       .pipe(helpers.teardown(callback));
   };
 
-  describe(Support.getTestDialectTeaser(flag), function () {
+  describe(Support.getTestDialectTeaser(flag), () => {
     it('creates a SequelizeMeta table', function (done) {
-      var self = this;
+      const self = this;
 
-      prepare(function () {
-        helpers.readTables(self.sequelize, function (tables) {
+      prepare(() => {
+        helpers.readTables(self.sequelize, tables => {
           expect(tables).to.have.length(1);
           expect(tables[0]).to.equal('SequelizeMeta');
           done();
@@ -34,30 +33,61 @@ var gulp    = require('gulp');
       });
     });
 
-    it('stops execution if no migrations have been done yet', function (done) {
-      prepare(function (err, output) {
+    it('stops execution if no migrations have been done yet', done => {
+      prepare((err, output) => {
         expect(err).to.equal(null);
         expect(output).to.contain('No executed migrations found.');
         done();
-      }.bind(this));
+      });
     });
 
     it('is correctly undoing a migration if they have been done already', function (done) {
-      var self = this;
+      const self = this;
 
-      prepare(function () {
-        helpers.readTables(self.sequelize, function (tables) {
+      prepare(() => {
+        helpers.readTables(self.sequelize, tables => {
           expect(tables).to.have.length(2);
           expect(tables[0]).to.equal('Person');
 
           gulp
             .src(Support.resolveSupportPath('tmp'))
             .pipe(helpers.runCli(flag, { pipeStdout: true }))
-            .pipe(helpers.teardown(function () {
-              helpers.readTables(self.sequelize, function (tables) {
+            .pipe(helpers.teardown(() => {
+              helpers.readTables(self.sequelize, tables => {
                 expect(tables).to.have.length(1);
                 expect(tables[0]).to.equal('SequelizeMeta');
                 done();
+              });
+            }));
+        });
+      }, 'db:migrate');
+    });
+
+    it('correctly undoes a named migration', function (done) {
+      const self = this;
+
+      prepare(() => {
+        const migrationsPath = Support.resolveSupportPath('tmp', 'migrations');
+        const migrations = fs.readdirSync(migrationsPath);
+        const createPersonMigration = migrations[0];
+
+        helpers.readTables(self.sequelize, tables => {
+          expect(tables).to.have.length(2);
+          expect(tables[0]).to.equal('Person');
+
+          gulp
+            .src(Support.resolveSupportPath('tmp'))
+            .pipe(helpers.copyMigration('emptyMigration.js'))
+            .pipe(helpers.runCli('db:migrate'))
+            .pipe(helpers.runCli(flag + ' --name ' + createPersonMigration, { pipeStdout: true }))
+            .pipe(helpers.teardown(() => {
+              helpers.readTables(self.sequelize, tables => {
+                expect(tables).to.have.length(1);
+                expect(tables[0]).to.equal('SequelizeMeta');
+                helpers.countTable(self.sequelize, 'SequelizeMeta', count => {
+                  expect(count).to.eql([{ count: 1 }]);
+                  done();
+                });
               });
             }));
         });

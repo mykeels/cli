@@ -1,6 +1,196 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## Future
+
+## v5.5.0 - 11th, June 2019
+
+### Fixed
+- fix: special characters in password are not escaped [#722](https://github.com/sequelize/cli/pull/722)
+- change: default config for operator aliases [#743](https://github.com/sequelize/cli/pull/743)
+
+## v5.4.0 - 1st, Dec 2018
+
+### Fixed
+- fix: show commands with --help [#719](https://github.com/sequelize/cli/pull/719)
+
+## v5.3.0 - 4th, Nov 2018
+
+### Fixed
+- fix(db:create): syntax errors with mssql create statement [#711](https://github.com/sequelize/cli/pull/711)
+- style: grammar mistake in seeder skeleton [#705](https://github.com/sequelize/cli/pull/705)
+
+### Feature
+- feat(mode:generate) add enum support [#704](https://github.com/sequelize/cli/pull/704)
+
+## v5.2.0 - 20th, Oct 2018
+
+### Feature
+- feat(db:create): support options on db:create with sequelize@4 [#700](https://github.com/sequelize/cli/pull/700)
+
+## v5.1.0 - 14th, Oct 2018
+
+### Feature
+- feat(postgres): migrationStorageTableSchema [#635](https://github.com/sequelize/cli/pull/635)
+
+## v5.0.0 - 13th, Oct 2018
+
+### Fixed
+- fix(init): relative config path for windows [#648](https://github.com/sequelize/cli/pull/648)
+- fix(mode:generate): use force arg correctly [#691](https://github.com/sequelize/cli/pull/691)
+- updated dependencies
+
+### Breaking
+- Node 6 or up is supported
+
+## v4.1.0 - 19th, Aug 2018
+
+### Fixed
+- fix(model:generate) attribute datatype validation [#682](https://github.com/sequelize/cli/issues/682)
+- fix: add force flag to model:create [#680](https://github.com/sequelize/cli/issues/680)
+
+### Changed
+- Use const in generated files
+
+
+## v4.0.0 - 15th, Feb 2018
+
+### Changed
+- Removed warning about v4
+- Support for v4 [#620](https://github.com/sequelize/cli/pull/620) [#441](https://github.com/sequelize/cli/issues/441)
+
+
+## v3.2.0 - 3rd, Dec 2017
+
+### Fixed
+- Better messages when files/folders already exists [#569](https://github.com/sequelize/cli/issues/569)
+- Specify ARRAY type with `model:create` [#155](https://github.com/sequelize/cli/issues/155)
+
+### Changed
+- Revert: safer configuration using environment variables for production [#594](https://github.com/sequelize/cli/pull/594)
+
+
+## v3.1.0 - 18th, Nov 2017
+
+### Fixed
+- Pass full config to sequelize constructor [#584](https://github.com/sequelize/cli/issues/584)
+
+### Added
+- `db:migrate` support for from / to arguments [#581](https://github.com/sequelize/cli/pull/581)
+
+### Changed
+- Safer configuration using environment variables for production [#579](https://github.com/sequelize/cli/pull/579)
+
+- Updated dependencies
+
+## v3.0.0 - 23rd, Sep 2017
+
+### Fixed
+ - `db:create/drop` should properly quote database name [#545](https://github.com/sequelize/cli/issues/545)
+
+### Added
+ - `--debug` support, print full stack for errors, when available [#552](https://github.com/sequelize/cli/pull/552)
+
+### Changed
+ - All errors are now properly formatted and outputted to `console.error` [#552](https://github.com/sequelize/cli/pull/552)
+
+### Internal
+ - Refactor to use centralized `log/error/warn` methods [#552](https://github.com/sequelize/cli/pull/552)
+
+## v3.0.0-3 - 16th, Sep 2017
+
+### Fixed
+- Error when creating nested config path [#534](https://github.com/sequelize/cli/issues/534)
+
+### Added
+- `db:create` and `db:drop` for MySQL, Postgres and MSSQL [#70](https://github.com/sequelize/cli/issues/70)
+
+## v3.0.0-2 - 10th, Sep 2017
+
+### Fixed
+- `.sequelizerc` is not properly read [#536](https://github.com/sequelize/cli/issues/536)
+
+## v3.0.0-1 - 9th, Sep 2017
+
+### Added
+- Warning with Sequelize v4
+
+### Changed
+- Skeletons are now ES6 based [#482](https://github.com/sequelize/cli/issues/482)
+
+## v3.0.0-0 - 8th, Sep 2017
+
+### Removed
+- `db:migrate:old_schema`
+- `--coffee` support
+- `help:*` commands
+
+### Fixed
+- Drop Gulp [#344](https://github.com/sequelize/cli/issues/344)
+- NSP Vulnerability [#466](https://github.com/sequelize/cli/issues/466)
+- Non functional with Node 7 [#383](https://github.com/sequelize/cli/issues/383)
+- Unable to find Gulp [#138](https://github.com/sequelize/cli/issues/138)
+- Reintegrate Gulp [#5](https://github.com/sequelize/cli/issues/5)
+- Unable to seed multiple files [#523](https://github.com/sequelize/cli/issues/523)
+- No Gulpfile found [#480](https://github.com/sequelize/cli/issues/480)
+- Exit Code(1) when migration undo fail [#394](https://github.com/sequelize/cli/issues/394)
+- `--coffee` flag dont work with `.rc` file [#244](https://github.com/sequelize/cli/issues/244)
+- CLI dont halt on error [#106](https://github.com/sequelize/cli/issues/106)
+
+### Improvements
+- No Gulp, better startup time
+- Proper exit codes
+- Remove dependency on `moment` , `findup-sync`, `gulp` and `gulp-help`
+
+## v2.8.0 - 2017-08-04
+### Added
+- Timestamps db:migrate:schema:timestamps:add [#460](https://github.com/sequelize/cli/pull/460)
+- Support for db:migrate:undo:all with `--to`, which allow reverting to a specific version [#459](https://github.com/sequelize/cli/pull/459)
+
+### Changed
+- Updated dependencies
+
+### Docs
+- FAQ section [#486](https://github.com/sequelize/cli/pull/486)
+
+## v2.7.0 - 2017-03-25
+### Added
+- Named db:migrate:undo [#387](https://github.com/sequelize/cli/pull/387)
+
+### Changed
+- Fixed promise warning in gulp-helper [#439](https://github.com/sequelize/cli/issues/439)
+
+## v2.6.0 - 2017-03-17
+### Added
+- Async configuration support [#359](https://github.com/sequelize/cli/pull/359)
+
+### Changed
+- Print error stack when reporting seeder errors [#411](https://github.com/sequelize/cli/pull/411)
+- Fixed seed:undo:all with `none` storage [#433](https://github.com/sequelize/cli/pull/433)
+- Updated dependencies
+
+## v2.5.0 - 2016-12-07
+### Added
+- Add underscored option to generated model when created with --underscored [#380](https://github.com/sequelize/cli/issues/380)
+- Add db:migrate:status [#385](https://github.com/sequelize/cli/issues/385)
+
+### Changed
+- Make it possible to use ":" in passwords in a DSN [#334](https://github.com/sequelize/cli/issues/334)
+- Catch error for db:migrate:undo[:all] [#353](https://github.com/sequelize/cli/issues/353)
+- Example usage of raw sql in migration [#363](https://github.com/sequelize/cli/issues/363)
+- Fixed typo: containts -> contains [#381](https://github.com/sequelize/cli/issues/381)
+- Updated dependencies
+
+## v2.4.0 - 2016-04-25
+### Added
+- Log filtering helper
+
+### Changed
+- Fixed some promises that were not being returned
+- Updated dependencies
+- Migration and seed filenames now use UTC date instead of local date
+- Output filtering
+
 ## v2.3.1 - 2016-01-14
 ### Changed
 - Update lodash to 4.0.0

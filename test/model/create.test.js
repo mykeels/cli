@@ -1,27 +1,26 @@
-'use strict';
 
-var expect    = require('expect.js');
-var Support   = require(__dirname + '/../support');
-var helpers   = require(__dirname + '/../support/helpers');
-var gulp      = require('gulp');
-var _         = require('lodash');
 
-([
-  'model:create',
-  'model:generate'
-]).forEach(function (flag) {
-  describe(Support.getTestDialectTeaser(flag), function () {
-    var combineFlags = function (flags) {
-      var result = flag;
+const expect    = require('expect.js');
+const Support   = require(__dirname + '/../support');
+const helpers   = require(__dirname + '/../support/helpers');
+const gulp      = require('gulp');
+const _         = require('lodash');
 
-      _.forEach(flags || {}, function (value, key) {
+[
+  'model:create'
+].forEach(flag => {
+  describe(Support.getTestDialectTeaser(flag), () => {
+    const combineFlags = function (flags) {
+      let result = flag;
+
+      _.forEach(flags || {}, (value, key) => {
         result = result + ' --' + key + ' ' + value;
       });
 
       return result;
     };
 
-    var prepare = function (options, callback) {
+    const prepare = function (options, callback) {
       options = _.assign({
         flags: {},
         cli:   { pipeStdout: true }
@@ -35,64 +34,74 @@ var _         = require('lodash');
         .pipe(helpers.teardown(callback));
     };
 
-    describe('name', function () {
-      describe('when missing', function () {
-        it('exits with an error code', function (done) {
+    describe('name', () => {
+      describe('when missing', () => {
+        it('exits with an error code', done => {
           prepare({
             flags: { attributes: 'first_name:string' },
             cli: { exitCode: 1 }
           }, done);
         });
 
-        it('notifies the user about a missing name flag', function (done) {
+        it('notifies the user about a missing name flag', done => {
           prepare({
             flags: { attributes: 'first_name:string' },
             cli: { pipeStderr: true }
-          }, function (err, stdout) {
-            expect(stdout).to.match(/Unspecified flag.*name/);
+          }, (err, stdout) => {
+            expect(stdout).to.match(/Missing required argument: name/);
             done();
           });
         });
       });
     });
 
-    describe('attributes', function () {
-      describe('when missing', function () {
-        it('exits with an error code', function (done) {
+    describe('attributes', () => {
+      describe('when missing', () => {
+        it('exits with an error code', done => {
           prepare({
             flags: { name: 'User' },
             cli: { exitCode: 1 }
           }, done);
         });
 
-        it('notifies the user about a missing attributes flag', function (done) {
+        it('notifies the user about a missing attributes flag', done => {
           prepare({
             flags: { name: 'User' },
             cli: { pipeStderr: true }
-          }, function (err, stdout) {
-            expect(stdout).to.match(/Unspecified flag.*attributes/);
+          }, (err, stdout) => {
+            expect(stdout).to.match(/Missing required argument: attributes/);
             done();
           });
         });
       });
 
-      ;([
-        'first_name:string,last_name:string,bio:text',
-        '\'first_name:string last_name:string bio:text\'',
-        '\'first_name:string, last_name:string, bio:text\''
-      ]).forEach(function (attributes) {
-        describe('--attributes ' + attributes, function () {
-          it('exits with exit code 0', function (done) {
+      describe('when passed an invalid data type', () => {
+        it('exits with an error code', done => {
+          prepare({
+            flags: { name: 'User', attributes: 'badAttribute:datetime' },
+            cli: { exitCode: 1 }
+          }, done);
+        });
+      })
+
+      ;[
+        'first_name:string,last_name:string,bio:text,role:enum:{Admin,"Guest User"},reviews:array:text',
+        'first_name:string,last_name:string,bio:text,role:enum:{Admin,\'Guest User\'},reviews:array:text',
+        '\'first_name:string last_name:string bio:text role:enum:{Admin,Guest User} reviews:array:text\'',
+        '\'first_name:string, last_name:string, bio:text, role:enum:{Admin, Guest User}, reviews:array:text\''
+      ].forEach(attributes => {
+        describe('--attributes ' + attributes, () => {
+          it('exits with exit code 0', done => {
             prepare({
-              flags: { name: 'User', attributes: attributes },
+              flags: { name: 'User', attributes },
               cli: { exitCode: 0 }
             }, done);
           });
 
-          it('creates the model file', function (done) {
+          it('creates the model file', done => {
             prepare({
-              flags: { name: 'User', attributes: attributes }
-            }, function () {
+              flags: { name: 'User', attributes }
+            }, () => {
               gulp
                 .src(Support.resolveSupportPath('tmp', 'models'))
                 .pipe(helpers.listFiles())
@@ -101,10 +110,10 @@ var _         = require('lodash');
             });
           });
 
-          it('generates the model attributes correctly', function (done) {
+          it('generates the model attributes correctly', done => {
             prepare({
-              flags: { name: 'User', attributes: attributes }
-            }, function () {
+              flags: { name: 'User', attributes }
+            }, () => {
               gulp
                 .src(Support.resolveSupportPath('tmp', 'models'))
                 .pipe(helpers.readFile('user.js'))
@@ -112,14 +121,16 @@ var _         = require('lodash');
                 .pipe(helpers.ensureContent('first_name: DataTypes.STRING'))
                 .pipe(helpers.ensureContent('last_name: DataTypes.STRING'))
                 .pipe(helpers.ensureContent('bio: DataTypes.TEXT'))
+                .pipe(helpers.ensureContent('role: DataTypes.ENUM(\'Admin\', \'Guest User\')'))
+                .pipe(helpers.ensureContent('reviews: DataTypes.ARRAY(DataTypes.TEXT)'))
                 .pipe(helpers.teardown(done));
             });
           });
 
-          it('creates the migration file', function (done) {
+          it('creates the migration file', done => {
             prepare({
-              flags: { name: 'User', attributes: attributes }
-            }, function () {
+              flags: { name: 'User', attributes }
+            }, () => {
               gulp
                 .src(Support.resolveSupportPath('tmp', 'migrations'))
                 .pipe(helpers.listFiles())
@@ -128,15 +139,15 @@ var _         = require('lodash');
             });
           });
 
-          ([
+          [
             { underscored: true, createdAt: 'created_at', updatedAt: 'updated_at'},
             { underscored: false, createdAt: 'createdAt', updatedAt: 'updatedAt'}
-          ]).forEach(function (attrUnd) {
-            describe((attrUnd.underscored ? '' : 'without ') + '--underscored', function () {
-              it('generates the migration content correctly', function (done) {
-                var flags = {
+          ].forEach(attrUnd => {
+            describe((attrUnd.underscored ? '' : 'without ') + '--underscored', () => {
+              it('generates the migration content correctly', done => {
+                const flags = {
                   name: 'User',
-                  attributes: attributes
+                  attributes
                 };
 
                 if ( attrUnd.underscored ) {
@@ -144,8 +155,8 @@ var _         = require('lodash');
                 }
 
                 prepare({
-                  flags: flags
-                }, function () {
+                  flags
+                }, () => {
                   gulp
                     .src(Support.resolveSupportPath('tmp', 'migrations'))
                     .pipe(helpers.readFile('*-create-user.js'))
@@ -159,6 +170,12 @@ var _         = require('lodash');
                     ))
                     .pipe(helpers.ensureContent(
                       'bio: {\n        type: Sequelize.TEXT\n      },'
+                    ))
+                    .pipe(helpers.ensureContent(
+                      'role: {\n        type: Sequelize.ENUM(\'Admin\', \'Guest User\')\n      },'
+                    ))
+                    .pipe(helpers.ensureContent(
+                      'reviews: {\n        type: Sequelize.ARRAY(Sequelize.TEXT)\n      },'
                     ))
                     .pipe(helpers.ensureContent([
                       '     id: {',
@@ -185,12 +202,38 @@ var _         = require('lodash');
                     .pipe(helpers.teardown(done));
                 });
               });
+
+              it('generates the model content correctly', done => {
+                const flags = {
+                  name: 'User',
+                  attributes
+                };
+
+                const targetContent = attrUnd.underscored ?
+                  'underscored: true'
+                  : '{});';
+
+                if ( attrUnd.underscored ) {
+                  flags.underscored = attrUnd.underscored;
+                }
+
+                prepare({
+                  flags
+                }, () => {
+                  gulp
+                    .src(Support.resolveSupportPath('tmp', 'models'))
+                    .pipe(helpers.readFile('user.js'))
+                    .pipe(helpers.ensureContent(targetContent))
+                    .pipe(helpers.ensureContent('.associate'))
+                    .pipe(helpers.teardown(done));
+                });
+              });
             });
           });
 
-          describe('when called twice', function () {
+          describe('when called twice', () => {
             beforeEach(function (done) {
-              this.flags = { name: 'User', attributes: attributes };
+              this.flags = { name: 'User', attributes };
               prepare({ flags: this.flags }, done);
             });
 
@@ -205,7 +248,7 @@ var _         = require('lodash');
               gulp
                 .src(Support.resolveSupportPath('tmp'))
                 .pipe(helpers.runCli(combineFlags(this.flags), { pipeStderr: true }))
-                .pipe(helpers.teardown(function (err, stderr) {
+                .pipe(helpers.teardown((err, stderr) => {
                   expect(stderr).to.contain('already exists');
                   done();
                 }));

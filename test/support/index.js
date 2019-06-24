@@ -2,13 +2,19 @@
 
 var fs        = require('fs');
 var path      = require('path');
-var helpers   = require(__dirname + '/../../lib/helpers');
-var Sequelize = helpers.generic.getSequelize();
-var _         = Sequelize.Utils._;
+var Sequelize = require('sequelize');
+var _         = require('lodash');
+var Bluebird  = require('bluebird');
 var DataTypes = Sequelize;
 var Config    = require(__dirname + '/config/config');
 var expect    = require('expect.js');
-var execQuery = require('../../lib/helpers').generic.execQuery;
+var execQuery = function (sequelize, sql, options) {
+  if (sequelize.query.length === 2) {
+    return sequelize.query(sql, options);
+  } else {
+    return sequelize.query(sql, null, options);
+  }
+}
 
 var Support = {
   Sequelize: Sequelize,
@@ -35,7 +41,7 @@ var Support = {
     var dialect = Support.getTestDialect();
 
     if (dialect === 'sqlite') {
-      var options    = Sequelize.Utils._.extend({}, sequelize.options, {
+      var options    = _.extend({}, sequelize.options, {
         storage: path.join(__dirname, 'tmp', 'db.sqlite')
       });
       var _sequelize = new Sequelize(sequelize.config.datase, null, null, options);
@@ -50,7 +56,7 @@ var Support = {
 
   createSequelizeInstance: function (options) {
     options = options || {};
-    options.dialect = options.dialect || 'mysql';
+    options.dialect = options.dialect || 'sqlite';
 
     var config = Config[options.dialect];
     var sequelizeOptions = _.defaults(options, {
@@ -85,27 +91,47 @@ var Support = {
   },
 
   clearDatabase: function (sequelize, callback) {
-    sequelize
-      .getQueryInterface()
-      .dropAllTables()
-      .then(function () {
-        if (sequelize.daoFactoryManager) {
-          sequelize.daoFactoryManager.daos = [];
-        } else {
-          sequelize.modelManager.models = [];
-        }
+    function dropAllTables() {
+      return sequelize
+        .getQueryInterface()
+        .dropAllTables()
+        .then(function () {
+          if (sequelize.daoFactoryManager) {
+            sequelize.daoFactoryManager.daos = [];
+          } else {
+            sequelize.modelManager.models = [];
+          }
 
-        return sequelize
-          .getQueryInterface()
-          .dropAllEnums()
-            .then(callback)
-            .catch(function (err) {
-              console.log('Error in support.clearDatabase() dropAllEnums() :: ', err);
+          return sequelize
+            .getQueryInterface()
+            .dropAllEnums()
+              .then(callback)
+              .catch(function (err) {
+                console.log('Error in support.clearDatabase() dropAllEnums() :: ', err);
+              });
+        })
+        .catch(function (err) {
+          console.log('Error in support.clearDatabase() dropAllTables() :: ', err);
+        });
+    };
+
+    // If Postgres, loop through each of the non-public schemas and DROP/re-CREATE them.
+    if (this.dialectIsPostgres()) {
+      return sequelize
+        .showAllSchemas()
+        .then(function (schemas) {
+          // showAllSchemas() leaves off the public schema.
+          return Bluebird.mapSeries(schemas, (schema) => {
+            return sequelize
+            .dropSchema(schema)
+            .then(function() {
+              return sequelize.createSchema(schema)
             });
-      })
-      .catch(function (err) {
-        console.log('Error in support.clearDatabase() dropAllTables() :: ', err);
-      });
+          }).then(dropAllTables); // Drop the public schema tables.
+        });
+    } else {
+      return dropAllTables();
+    }
   },
 
   getSupportedDialects: function () {
@@ -125,7 +151,7 @@ var Support = {
   },
 
   getTestDialect: function () {
-    var envDialect = process.env.DIALECT || 'mysql';
+    var envDialect = process.env.DIALECT || 'sqlite';
 
     if (envDialect === 'postgres-native') {
       envDialect = 'postgres';
@@ -139,7 +165,7 @@ var Support = {
   },
 
   dialectIsMySQL: function (strict) {
-    var envDialect = process.env.DIALECT || 'mysql';
+    var envDialect = this.getTestDialect();
 
     if (strict === undefined) {
       strict = false;
@@ -152,6 +178,11 @@ var Support = {
     }
   },
 
+  dialectIsPostgres: function (strict) {
+    var envDialect = this.getTestDialect();
+    return ['postgres', 'postgres-native'].indexOf(envDialect) !== -1;
+  },
+
   getTestDialectTeaser: function (moduleName) {
     var dialect = this.getTestDialect();
 
@@ -159,7 +190,7 @@ var Support = {
       dialect = 'postgres-native';
     }
 
-    return '[' + dialect.toUpperCase() + '] bin/sequelize ' + moduleName;
+    return '[' + dialect.toUpperCase() + '] lib/sequelize ' + moduleName;
   },
 
   getTestUrl: function (config) {
@@ -183,7 +214,7 @@ var Support = {
   },
 
   getCliPath: function (cwd) {
-    return path.resolve(cwd, path.resolve(process.cwd(), 'bin', 'sequelize'));
+    return path.resolve(cwd, path.resolve(process.cwd(), 'lib', 'sequelize'));
   },
 
   getCliCommand: function (cwd, flags) {
